@@ -1,0 +1,16 @@
+{
+  "name": "markbank",
+  "version": "1.0.0",
+  "description": "Projeto feito durante o curso de NodeJS da Hora de Codar",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^5.2.0",
+    "inquirer": "^9.2.7"
+  }
+}
