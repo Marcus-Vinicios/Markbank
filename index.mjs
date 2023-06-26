@@ -3,7 +3,7 @@ import fs from 'fs'
 import inquirer from 'inquirer'
 
 console.log(chalk.bgBlueBright.black('Iniciando o Markbank'))
-
+//Inicializador
 function Home() {
     inquirer.prompt([
         {
@@ -59,7 +59,7 @@ function Login() {
         })
         .catch(err => { console.log(err) })
 }
-
+//Operações que podem ser feitas pelo usuário
 function Operation(accountName) {
     const accountData = getAccount(accountName)
     const saldo = accountData.balance
@@ -114,7 +114,7 @@ function createAccount() {
                 createAccount()
                 return
             }
-            fs.writeFileSync(`accounts/${accountName}.json`, '{"balance": 0}', (err) => {
+            fs.writeFileSync(`accounts/${accountName}.json`, '{"balance": 0, "overdraft: 500"}', (err) => {
                 console.log(err)
             })
             console.log(chalk.green('Sua Conta foi criada com sucesso!'))
@@ -122,7 +122,7 @@ function createAccount() {
         })
         .catch(() => { console.log(err) })
 }
-
+//Confere se a "conta" existe.
 function checkAccount(accountName) {
     if (!fs.existsSync(`accounts/${accountName}.json`)) {
         console.log(chalk.bgRed.black('Esta conta não existe! Tente novamente'))
@@ -165,21 +165,36 @@ function Sacar(accountName) {
         Saque(accountName, amount)
     }).catch((err) => { console.log(err) })
 }
-
+//Realiza a ação de depósito da "conta"
 function addAmount(accountName, amount) {
     const accountData = getAccount(accountName)
+    const saldo = accountData.balance
+    const overdraft = accountData.overdraft
     if (!amount) {
         console.log(chalk.bgRed.black('Ocorreu um erro, tente novamente mais tarde!'))
         return Operation(accountName)
     }
-    accountData.balance = parseFloat(amount) + parseFloat(accountData.balance)
-    fs.writeFileSync(`accounts/${accountName}.json`, JSON.stringify(accountData), function (err) {
-        console.log(err)
-    })
-    console.log(chalk.green(`Foi depositado o valor de R$${amount} na sua conta!`))
-    Operation(accountName)
+    if (saldo === 0 && overdraft < 500) {
+        const desconto = 500 - overdraft
+        const deposit = amount - desconto
+        accountData.overdraft = parseFloat(accountData.overdraft) + parseFloat(desconto)
+        accountData.balance = parseFloat(deposit) + parseFloat(accountData.balance)
+        fs.writeFileSync(`accounts/${accountName}.json`, JSON.stringify(accountData), function (err) {
+            console.log(err)
+        })
+        console.log(chalk.green(`Foi depositado o valor de R$${amount} na sua conta!`))
+        console.log(chalk.bgYellowBright.red(`Foi descontado R$${desconto} do seu depósito!`))
+        Operation(accountName)
+    } else {
+        accountData.balance = parseFloat(amount) + parseFloat(accountData.balance)
+        fs.writeFileSync(`accounts/${accountName}.json`, JSON.stringify(accountData), function (err) {
+            console.log(err)
+        })
+        console.log(chalk.green(`Foi depositado o valor de R$${amount} na sua conta!`))
+        Operation(accountName)
+    }
 }
-
+//Realiza a ação de saque da "conta"
 function Saque(accountName, amount) {
     const accountData = getAccount(accountName)
     const saldo = accountData.balance
@@ -210,7 +225,7 @@ function Saque(accountName, amount) {
                             console.log(err)
                         })
                         console.log(chalk.green(`Foi realizado um saque no valor de R$${amount} na sua conta!`))
-                        console.log(chalk.bgYellowBright.black('Você utilizou o seu limite especial!'))
+                        console.log(chalk.bgYellowBright.red('Você utilizou o seu limite especial!'))
                         Operation(accountName)
                     }
                 } else {
@@ -227,7 +242,7 @@ function Saque(accountName, amount) {
         Operation(accountName)
     }
 }
-
+//Obtem os dados da "conta"
 function getAccount(accountName) {
     const accountJSON = fs.readFileSync(`accounts/${accountName}.json`, {
         encoding: 'utf-8',
